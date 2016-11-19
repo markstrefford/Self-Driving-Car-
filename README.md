@@ -1,6 +1,5 @@
-# Turing Tuning #
 
-## Self-Driving Car Engineer Nanodegree - Challenge 1
+## Self-Driving Car Engineer Nanodegree - Challenge 2
 
 ### What is this repository for? ###
 
@@ -26,4 +25,4 @@ Our main channel of communication is the Slack channel: https://nd013.slack.com/
 
 ### Resources ###
 
-Challenge 1 description: https://medium.com/udacity/challenge-2-using-deep-learning-to-predict-steering-angles-f42004a36ff3#.8u9hxy8wh
+Challenge 2 description: https://medium.com/udacity/challenge-2-using-deep-learning-to-predict-steering-angles-f42004a36ff3#.8u9hxy8wh

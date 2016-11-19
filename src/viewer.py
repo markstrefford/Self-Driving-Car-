@@ -8,6 +8,7 @@ import pygame
 #from keras.models import model_from_json
 import utils as u
 import cv2
+import os
 
 train_data_path = u.train_data_path  #'../data/Challenge 2/train'
 ch, width, height = u.ch, u.width, u.height
@@ -143,21 +144,52 @@ print "Preparing image data for viewer..."
 train_paths = u.get_data_paths(train_data_path)
 #print train_paths
 img_df = u.get_image_list(train_paths)
-images_df = img_df.loc[img_df['frame_id']=='center_camera'].reset_index(drop=True) # , inplace=True)   # Get centre camera images only
-num_images = images_df.shape[0]
+#images_df = img_df.loc[img_df['frame_id']=='center_camera'].reset_index(drop=True) # , inplace=True)   # Get centre camera images only
+images_df = img_df      # TODO: Remove later
+num_images = images_df.shape[0]/3       # Assume 3 images per time interval
 print "Found {} images.".format(num_images)
 
 #for img, steering, speed in u.udacity_data_generator(1, images_df, range(len(images_df))):   # (128, images_df, train_image_idx, 't')
-for img, steering, speed in u.data_generator(1, images_df, get_speed = True, img_transpose=False,
-                                                     resize = False, min_speed = 0, min_angle = 0):   # (128, images_df, train_image_idx, 't')
+# for img, steering, speed in u.data_generator(1, images_df, get_speed = True, img_transpose=False,
+#                                                      resize = False, min_speed = 0, min_angle = 0):   # (128, images_df, train_image_idx, 't')
 
-    predicted_steering = predict_steering_angle(i, img, speed)
-    draw_path_on(img[0], speed, steering)
-    draw_path_on(img[0], speed, predicted_steering, (0, 255, 0))
+# Need 3 images (left, centre, right)
+# So iterate through images_df, take 3 images
+frame=np.zeros((frame_size[1],frame_size[0]*3,3), dtype=np.uint8)
+
+for image_data in images_df.iterrows():
+    print image_data
+    time_index = image_data['index']
+    steering = image_data['angle']
+    speed = image_data['speed']
+    imagepath = os.path.join(image_data.at['imagepath'], image_data['filename'])
+    img = cv2.imread(imagepath)
+    # cv2.imshow("Viewer", image)
+    # try:
+    image = cv2.resize(img, frame_size)  # Resize as we have 3 images next to each other!
+
+    frame_id = image_data['frame_id']
+    if frame_id == 'left_camera':
+        offset = 0
+    elif frame_id == 'center_camera':
+        offset = 320
+    if frame_id == 'center_camera':
+        # Only predict for a center camera image
+        predicted_steering = predict_steering_angle(i, img, speed)
+        draw_path_on(img[0], speed, steering)
+        draw_path_on(img[0], speed, predicted_steering, (0, 255, 0))
+    elif frame_id == 'right_camera':
+        offset = 640
+    else:
+        offset = -1  # Should never get here!
+
+    # Place image in the larger frame now!
+    for row in range(frame_size[1]):
+        frame[row, offset:offset+frame_size[0], :] = image[row, :, :]
 
     # Display image
     cv2.imshow('Udacity challenge 2 - viewer', img[0])
-    key = cv2.waitKey(10)
+    key = cv2.waitKey(1)
 
     if key == ord('q'):
         break
