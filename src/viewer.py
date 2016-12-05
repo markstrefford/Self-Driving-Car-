@@ -189,11 +189,11 @@ for index, image_data in images_df.iterrows():
 
     # Place image in the larger frame now!
     for row in range(frame_size[1]):
-        print "Row: {}, Offset: {}, Offset+frame_size[0]: {}, image[row, :, :].shape: {}".format(row, offset, offset+frame_size[0], image[row, :, :].shape)
+        #print "Row: {}, Offset: {}, Offset+frame_size[0]: {}, image[row, :, :].shape: {}".format(row, offset, offset+frame_size[0], image[row, :, :].shape)
         frame[row, offset:offset+frame_size[0], :] = image[row, :, :]
 
     # Display image
-    cv2.imshow('Udacity challenge 2 - viewer', img[0])
+    cv2.imshow('Udacity challenge 2 - viewer', frame)
     key = cv2.waitKey(1)
 
     if key == ord('q'):
