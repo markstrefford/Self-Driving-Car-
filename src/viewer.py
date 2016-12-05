@@ -10,7 +10,7 @@ import utils as u
 import cv2
 import os
 
-train_data_path = u.train_data_path  #'../data/Challenge 2/train'
+train_data_path = u.train_data_path  #'../data/Challenge 2/Train'
 ch, width, height = u.ch, u.width, u.height
 
 # Load images from the ROS databag, resize accordingly and ensure orientation (w x h instead of h x w)
@@ -157,7 +157,7 @@ print "Found {} images.".format(num_images)
 # So iterate through images_df, take 3 images
 frame=np.zeros((frame_size[1],frame_size[0]*3,3), dtype=np.uint8)
 
-for image_data in images_df.iterrows():
+for index, image_data in images_df.iterrows():
     print image_data
     time_index = image_data['index']
     steering = image_data['angle']
@@ -173,18 +173,23 @@ for image_data in images_df.iterrows():
         offset = 0
     elif frame_id == 'center_camera':
         offset = 320
+    elif frame_id == 'right_camera':
+        offset = 640
+    else:
+        print "ERROR: Frame_id={}".format(frame_id)
+        offset = -1  # Should never get here!
+        break
+
+    # TODO - Move this up, DRY??
     if frame_id == 'center_camera':
         # Only predict for a center camera image
         predicted_steering = predict_steering_angle(i, img, speed)
         draw_path_on(img[0], speed, steering)
         draw_path_on(img[0], speed, predicted_steering, (0, 255, 0))
-    elif frame_id == 'right_camera':
-        offset = 640
-    else:
-        offset = -1  # Should never get here!
 
     # Place image in the larger frame now!
     for row in range(frame_size[1]):
+        print "Row: {}, Offset: {}, Offset+frame_size[0]: {}, image[row, :, :].shape: {}".format(row, offset, offset+frame_size[0], image[row, :, :].shape)
         frame[row, offset:offset+frame_size[0], :] = image[row, :, :]
 
     # Display image

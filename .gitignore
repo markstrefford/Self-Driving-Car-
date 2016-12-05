@@ -2,3 +2,6 @@ data/
 .idea/
 bagedit/
 *.pyc
+.DS_Store
+interpolated.csv
+model/

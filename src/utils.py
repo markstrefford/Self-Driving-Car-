@@ -12,8 +12,8 @@ import pandas as pd
 # Set default values, etc.
 ch, width, height = 3, 200, 66
 
-train_data_path = '../data/Challenge 2/train'
-test_data_path = '../data/Challenge 2/test'
+train_data_path = '../data/Challenge 2/Train'
+test_data_path = '../data/Challenge 2/Test'
 
 ################################################################################
 # Get a list of directories for training or testing purposes
