@@ -15,6 +15,15 @@ from keras.layers.pooling import MaxPooling2D
 #   75% NVIDIA's end-to-end paper: https://arxiv.org/pdf/1604.07316v1.pdf
 #   25% Comma.ai research: https://github.com/commaai/research/blob/master/SelfSteering.md
 def getNNModel(model_path=None, reg_lambda=0.0):
+
+    from keras.callbacks import Callback
+    class LossHistory(Callback):
+        def on_train_begin(self, logs={}):
+            self.losses = []
+
+        def on_batch_end(self, batch, logs={}):
+            self.losses.append(logs.get('loss'))
+
     if model_path:
         model = load_model(model_path)
     else:
@@ -62,4 +71,4 @@ def getNNModel(model_path=None, reg_lambda=0.0):
         model.add(Dropout(0.5))
         model.add(Dense(1, init='he_normal', name='output'))
 
-    return model
+    return model, LossHistory

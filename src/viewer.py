@@ -13,47 +13,9 @@ import os
 train_data_path = u.train_data_path  #'../data/Challenge 2/Train'
 ch, width, height = u.ch, u.width, u.height
 
-# Load images from the ROS databag, resize accordingly and ensure orientation (w x h instead of h x w)
-# def load_rosbag_data(path, frame_size):
-#     print 'Loading databag...'
-#     while 1:
-#         bag = rosbag.Bag(path)
-#         nmessages = bag.get_message_count('/center_camera/image_color')
-#         i = 0
-#         steering_angle, current_wheel_speed, speed = 0, 0, 0
-#
-#         for topic, msg, t in bag.read_messages(
-#             topics=['/vehicle/steering_report',
-#                     '/center_camera/image_color',
-#                     '/left_camera/image_color',
-#                     '/right_camera/image_color']):
-#
-#             if (topic == '/vehicle/steering_report'):
-#                 current_steering = msg.steering_wheel_angle
-#                 current_speed = msg.speed
-#             elif (topic == '/center_camera/image_color'):
-#                 img = cv2.resize(CvBridge().imgmsg_to_cv2(msg, "bgr8"), frame_size,
-#                                  interpolation = cv2.INTER_LINEAR) #.swapaxes(0, 1)  #x[i] = ...
-#                 steering_angle = current_steering
-#                 speed = current_speed
-#                 yield (img, steering_angle, speed)   # (x, y)
-#                 i += 1
-#
-#             # elif (topic == '/left_camera/image_color'):
-#             #     x[i] = cv2.resize(CvBridge().imgmsg_to_cv2(msg, "bgr8"), (200, 66))
-#             #     y[i] = np.array([current_steering + shift]);
-#             #     i = i + 1
-#             # elif (topic == '/right_camera/image_color'):
-#             #     x[i] = cv2.resize(CvBridge().imgmsg_to_cv2(msg, "bgr8"), (200, 66))
-#             #     y[i] = np.array([current_steering - shift]);
-#             #     i = i + 1
-#
-#             if i % 100 == 0:
-#                 print "Loaded image {}/{}".format(i, nmessages)
-#             if (i == nmessages):
-#                 yield (img, steering_angle, speed)
-#
-#         bag.close()
+# Setup viewer
+frame_size = (480,360)
+x_scaling, y_scaling = 1.5, 1.5     # For the steering trace
 
 
 # Based on code from comma.ai viewer
@@ -84,11 +46,11 @@ rdst = \
   [41.67121717733509, -2.029755283648498]]
 
 tform3_img = tf.ProjectiveTransform()
-tform3_img.estimate(np.array(rdst)*2, np.array(rsrc)*2)   # *2 required due to viewer size (640x480)
+tform3_img.estimate(np.array(rdst), np.array(rsrc))   # *2 required due to viewer size (640x480)
 
 def perspective_tform(x, y):
   p1, p2 = tform3_img((x,y))[0]
-  return p2, p1
+  return p2 * y_scaling, p1 * x_scaling
 
 # ***** functions to draw lines *****
 def draw_pt(img, x, y, color, sz=1):
@@ -124,6 +86,42 @@ def draw_path_on(img, speed_ms, angle_steers, color=(0,0,255)):
     path_y, _ = calc_lookahead_offset(speed_ms, angle_steers, path_x)
     draw_path(img, path_x, path_y, color)
 
+##########################################################
+#
+# Merge left, right and centre images into a single image
+#
+# Based on http://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
+# and http://stackoverflow.com/questions/35588570/cv2-featuredetector-createsift-causes-segmentation-fault
+#
+# SIFT and SURF are patented, so using open source BRISK instead (not FREAK was preferred but not available in OpenCV2.14 build!?)
+#
+##########################################################
+
+
+
+def detect_and_describe(image):
+    img=cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    briskDetector = cv2.BRISK()
+    (kps, features) = briskDetector.detectAndCompute(img1.png, None)
+    kps=np.float32([kp.pt for kp in kps])
+    return (kps, features)
+
+
+def merge_camera_images(images, ratio=0.75, reprojThresh=4.0, show_matches = True):
+    kps1, features1=detect_and_describe(images[0])
+    kps2, features2=detect_and_describe(images[1])
+    kps3, features3=detect_and_describe(images[2])
+
+
+
+    # bf = cv2.BFMatcher()
+    # matches = bf.knnmatch(des1, des2, k=2)
+    # matches = sorted(matches, key=lambda x: x.distance)
+    # img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, flags=2)
+    print "merge_camera_images: img3.shape = {}".format(img3.shape)
+    return img3
+
+##########################################################
 
 
 # TODO - Predict based on the image, the speed, or just get something from an array
@@ -131,9 +129,6 @@ def draw_path_on(img, speed_ms, angle_steers, color=(0,0,255)):
 def predict_steering_angle(i, img, speed):
     return 0    # Default to straight ahead for now
 
-
-# Setup
-frame_size = (320,240)
 
 # Main Loop
 i=0
@@ -156,44 +151,50 @@ print "Found {} images.".format(num_images)
 # Need 3 images (left, centre, right)
 # So iterate through images_df, take 3 images
 frame=np.zeros((frame_size[1],frame_size[0]*3,3), dtype=np.uint8)
+left_cam = np.zeros((frame_size[1], frame_size[0], 3), dtype=np.uint8)
+right_cam = np.zeros((frame_size[1], frame_size[0], 3), dtype=np.uint8)
+center_cam = np.zeros((frame_size[1], frame_size[0], 3), dtype=np.uint8)
 
 for index, image_data in images_df.iterrows():
-    print image_data
     time_index = image_data['index']
     steering = image_data['angle']
     speed = image_data['speed']
     imagepath = os.path.join(image_data.at['imagepath'], image_data['filename'])
     img = cv2.imread(imagepath)
-    # cv2.imshow("Viewer", image)
-    # try:
+    #img -= int(np.mean(img))   # From http://cs231n.github.io/neural-networks-2/#init
     image = cv2.resize(img, frame_size)  # Resize as we have 3 images next to each other!
 
     frame_id = image_data['frame_id']
     if frame_id == 'left_camera':
+        left_cam = image;
         offset = 0
     elif frame_id == 'center_camera':
-        offset = 320
+        center_cam = image
+        offset = frame_size[0]
+        # Only predict for a center camera image
+        predicted_steering = predict_steering_angle(i, img, speed)
+        draw_path_on(image, speed, steering)
+        draw_path_on(image, speed, predicted_steering, (0, 255, 0))
     elif frame_id == 'right_camera':
-        offset = 640
+        right_cam = image;
+        offset = frame_size[0] * 2
     else:
-        print "ERROR: Frame_id={}".format(frame_id)
+        print "ERROR: Frame_id {} is unsupported!".format(frame_id)
         offset = -1  # Should never get here!
         break
 
-    # TODO - Move this up, DRY??
-    if frame_id == 'center_camera':
-        # Only predict for a center camera image
-        predicted_steering = predict_steering_angle(i, img, speed)
-        draw_path_on(img[0], speed, steering)
-        draw_path_on(img[0], speed, predicted_steering, (0, 255, 0))
-
     # Place image in the larger frame now!
+    # TODO - Use np.hstack!!
     for row in range(frame_size[1]):
         #print "Row: {}, Offset: {}, Offset+frame_size[0]: {}, image[row, :, :].shape: {}".format(row, offset, offset+frame_size[0], image[row, :, :].shape)
         frame[row, offset:offset+frame_size[0], :] = image[row, :, :]
 
+    # Merge images
+    merged_image = merge_camera_images([left_cam, center_cam, right_cam])
+
     # Display image
-    cv2.imshow('Udacity challenge 2 - viewer', frame)
+    #cv2.imshow('Udacity challenge 2 - viewer', frame)
+    cv2.imshow('Udacity challenge 2 - viewer', merged_image)
     key = cv2.waitKey(1)
 
     if key == ord('q'):

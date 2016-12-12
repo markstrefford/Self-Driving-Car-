@@ -5,3 +5,4 @@ bagedit/
 .DS_Store
 interpolated.csv
 model/
+src/.ipynb_checkpoints/

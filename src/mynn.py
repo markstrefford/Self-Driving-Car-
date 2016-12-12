@@ -8,6 +8,7 @@ import h5py
 
 
 def custom_keras_model(num_classes, weights_path=None, w_regularizer=None, b_regularizer=None, include_top = False):
+
     num_filters = 8
     num_pooling = 2
     num_filters_2 = 8

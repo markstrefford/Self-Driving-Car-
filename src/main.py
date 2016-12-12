@@ -14,10 +14,24 @@ from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping
 from keras.utils.visualize_util import plot
 from datetime import datetime
+import matplotlib.pyplot as plt
 
+
+
+# Some utils
+# TODO - Move to utils
+def graph_training_loss_history(filename, losses):
+    plt.figure(figsize=(6, 3))
+    plt.plot(losses)
+    plt.ylabel('error')
+    plt.xlabel('batch')
+    plt.title('training error')
+    plt.savefig(filename)
+    #plt.show()
 
 # Train model--------------------
-model = nnmodel.getNNModel()
+model, LossHistory = nnmodel.getNNModel()
+history = LossHistory()
 optimizer = Adam(lr=1e-4)
 model.compile(optimizer, loss="mse")
 plot(model, to_file='model.png')
@@ -48,15 +62,18 @@ valid_images_df.to_csv('../data/Challenge 2/validate_list.csv')     # TODO: Move
 train_generator = utils.data_generator(128, train_images_df, get_speed=False)
 val_data = utils.data_generator(128, valid_images_df, get_speed=False)
 
-history = model.fit_generator(
+hist = model.fit_generator(
     train_generator,
     samples_per_epoch=num_train_images,
-    nb_epoch=5,
+    nb_epoch=20,
     validation_data=val_data,
-    nb_val_samples=num_valid_images
-    #callbacks=[stopping_callback]
-)
+    nb_val_samples=num_valid_images,
+    callbacks=[history])
 
 # Save time/date stamped trained model
-model.save("../model/trained_model_{}.h5".format(datetime.now().strftime('%Y-%m-%d-%H:%M:%S')))
+model_date = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
+model.save("../model/trained_model_{}.h5".format(model_date))
+
+# TODO - Rework this graphing...
+graph_training_loss_history('../model/loss_history_{}.png'.format(model_date), history.losses)
 
