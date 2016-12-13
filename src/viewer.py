@@ -14,8 +14,9 @@ train_data_path = u.train_data_path  #'../data/Challenge 2/Train'
 ch, width, height = u.ch, u.width, u.height
 
 # Setup viewer
-frame_size = (480,360)
-x_scaling, y_scaling = 1.5, 1.5     # For the steering trace
+#frame_size = (480,360)
+frame_size = (480,200)
+x_scaling, y_scaling = 1.5, 1     # For the steering trace
 
 
 # Based on code from comma.ai viewer
@@ -162,6 +163,9 @@ for index, image_data in images_df.iterrows():
     imagepath = os.path.join(image_data.at['imagepath'], image_data['filename'])
     img = cv2.imread(imagepath)
     #img -= int(np.mean(img))   # From http://cs231n.github.io/neural-networks-2/#init
+    # Crop to see the road only for now...
+    img = img[200:480, 0:640]
+
     image = cv2.resize(img, frame_size)  # Resize as we have 3 images next to each other!
 
     frame_id = image_data['frame_id']
@@ -190,11 +194,11 @@ for index, image_data in images_df.iterrows():
         frame[row, offset:offset+frame_size[0], :] = image[row, :, :]
 
     # Merge images
-    merged_image = merge_camera_images([left_cam, center_cam, right_cam])
+    #merged_image = merge_camera_images([left_cam, center_cam, right_cam])
 
     # Display image
-    #cv2.imshow('Udacity challenge 2 - viewer', frame)
-    cv2.imshow('Udacity challenge 2 - viewer', merged_image)
+    cv2.imshow('Udacity challenge 2 - viewer', frame)
+    #cv2.imshow('Udacity challenge 2 - viewer', merged_image)
     key = cv2.waitKey(1)
 
     if key == ord('q'):

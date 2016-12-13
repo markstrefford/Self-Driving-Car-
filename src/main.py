@@ -59,8 +59,8 @@ print "Found {} validation images.".format(num_valid_images)
 valid_images_df.to_csv('../data/Challenge 2/validate_list.csv')     # TODO: Move filename to somewhere else and parameterise
 
 # Now set up generators for training
-train_generator = utils.data_generator(128, train_images_df, get_speed=False)
-val_data = utils.data_generator(128, valid_images_df, get_speed=False)
+train_generator = utils.data_generator(128, train_images_df, get_speed=False, crop=True)
+val_data = utils.data_generator(128, valid_images_df, get_speed=False, crop=True)
 
 hist = model.fit_generator(
     train_generator,
