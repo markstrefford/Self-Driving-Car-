@@ -21,7 +21,8 @@ import matplotlib.pyplot as plt
 # Some utils
 # TODO - Move to utils
 def graph_training_loss_history(filename, losses):
-    plt.figure(figsize=(6, 3))
+    #plt.figure(figsize=(6, 3))
+    plt.figure()
     plt.plot(losses)
     plt.ylabel('error')
     plt.xlabel('batch')
@@ -59,13 +60,13 @@ print "Found {} validation images.".format(num_valid_images)
 valid_images_df.to_csv('../data/Challenge 2/validate_list.csv')     # TODO: Move filename to somewhere else and parameterise
 
 # Now set up generators for training
-train_generator = utils.data_generator(128, train_images_df, get_speed=False, crop=True)
-val_data = utils.data_generator(128, valid_images_df, get_speed=False, crop=True)
+train_generator = utils.data_generator(32, train_images_df, get_speed=False) #, crop=True)
+val_data = utils.data_generator(32, valid_images_df, get_speed=False)  #, crop=True)
 
 hist = model.fit_generator(
     train_generator,
     samples_per_epoch=num_train_images,
-    nb_epoch=20,
+    nb_epoch=5,
     validation_data=val_data,
     nb_val_samples=num_valid_images,
     callbacks=[history])

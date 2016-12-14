@@ -100,7 +100,7 @@ def data_generator(batchsize, image_list, get_speed = True, img_transpose = True
             imagepath = os.path.join(image_list.at[idx, 'imagepath'], image_list.at[idx, 'filename'])
             image = cv2.imread(imagepath)
             # Crop before resize!!
-            if crop == True and resize == False:
+            if crop == True:
                 # im[y1:y2, x1:x2]
                 image = image[200:480, 0:640]
             img = cv2.resize(image, (width, height))
