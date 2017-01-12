@@ -99,7 +99,7 @@ def data_generator(batchsize, image_list, get_speed = True, img_transpose = True
             speed = image_list.at[idx, 'speed']
             imagepath = os.path.join(image_list.at[idx, 'imagepath'], image_list.at[idx, 'filename'])
             image = cv2.imread(imagepath)
-            # Crop before resize!!
+            #Crop before resize!!
             if crop == True:
                 # im[y1:y2, x1:x2]
                 image = image[200:480, 0:640]
@@ -115,6 +115,7 @@ def data_generator(batchsize, image_list, get_speed = True, img_transpose = True
                 #x[i, :, :, :] = img.transpose(2,1,0)   # Transpose the image to fit into the CNN later...
                 y[i] = float(steering)
                 z[i] = float(speed)
+                cv2.imshow('Batch', x[i])
                 i = i + 1
 
             if (i == batchsize):
